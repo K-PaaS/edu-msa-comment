@@ -10,7 +10,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,8 +27,8 @@ public class CommentController {
 	@Resource(name = "commentService")
 	private CommentService commentService;
 
-	@RequestMapping(value = "/comments", method = RequestMethod.GET)
-	public Map<String, Object> getComments(@RequestParam(required = true) Integer boardSeq) {
+	@RequestMapping(value = "/comments/{boardSeq}", method = RequestMethod.GET)
+	public Map<String, Object> getComments(@PathVariable("boardSeq") Integer boardSeq) {
 		
 		Map<String, Object> paramMap = new HashMap<String, Object>();
 		Map<String, Object> result = new HashMap<String, Object>();
@@ -38,6 +37,7 @@ public class CommentController {
 		Map<String, Object> commentCount = null;
 		List<Object> commentList = null;
 
+		System.out.println("boardSeq : " + boardSeq);
 		// parameter Setting
 		try {
 			paramMap.put("boardSeq", boardSeq);
@@ -151,13 +151,16 @@ public class CommentController {
 	@RequestMapping(value = "/comments/{commentSeq}", method = RequestMethod.PUT)
 	public Map<String, Object> putComment(@PathVariable("commentSeq") int commentSeq, HttpEntity<String> httpEntity) {
 		
+		System.out.println("AAAA : " + commentSeq);
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString = httpEntity.getBody();
 
 		Map<String, Object> paramMap = new HashMap<String, Object>();
 		Map<String, Object> result = new HashMap<String, Object>();
 		Map<String, Object> resultData = new HashMap<String, Object>();
-
+		Map<String, Object> commentCount = null;
+		List<Object> commentList = null;
+		
 		// parameter Setting
 		try {
 			if(jsonString ==  null || "".equals(jsonString)) {
@@ -167,6 +170,7 @@ public class CommentController {
 
 			String comment = jsonMap.get("comment");
 			String writeUserId = jsonMap.get("writeUserId");
+			String boardSeq = jsonMap.get("boardSeq");
 			
 			// 수정 요청 Data가 없는 경우
 			if(CommonUtil.isEmptyString(comment)) {
@@ -176,6 +180,7 @@ public class CommentController {
 			paramMap.put("commentSeq", commentSeq);
 			paramMap.put("comment", comment);
 			paramMap.put("writeUserId", writeUserId);
+			paramMap.put("boardSeq", boardSeq);
 		} catch (Exception e) {
 			result.put("result", "ERROR");
 			result.put("errMsg", e.getMessage());
@@ -185,14 +190,32 @@ public class CommentController {
 		}
 		
 		try {
-			
+			System.out.println(paramMap);
 			int updateCount = commentService.putComment(paramMap);
+			System.out.println(updateCount);
 			if(updateCount != 1) {
 				throw new Exception("코멘트 수정에 실패하였습니다.");
+			}
+
+
+			// select CommentCount
+			commentCount = commentService.getCommentCount(paramMap);
+			long count = 0;
+			
+			if(commentCount != null) {
+				count = (Long)commentCount.get("COUNT");
+				resultData.put("commentCount", count);
+			}
+
+			// select CommentList
+			if(count != 0) {
+				commentList = (List<Object>)commentService.getCommentList(paramMap);
+				resultData.put("commentList", commentList);
 			}
 			
 			result.put("result", "SUCCESS");
 			result.put("resultData", resultData);
+			
 		} catch (Exception e) {
 			result.put("result", "ERROR");
 			result.put("errMsg", e.getMessage());
@@ -204,28 +227,18 @@ public class CommentController {
 
 	@SuppressWarnings("unchecked")
 	@RequestMapping(value = "/comments/{commentSeq}", method = RequestMethod.DELETE)
-	public Map<String, Object> deleteComment(@PathVariable("commentSeq") int commentSeq, HttpEntity<String> httpEntity) {
-		
-		ObjectMapper mapper = new ObjectMapper();
-		String jsonString = httpEntity.getBody();
+	public Map<String, Object> deleteComment(@PathVariable("commentSeq") int commentSeq) {
 
 		Map<String, Object> paramMap = new HashMap<String, Object>();
 		Map<String, Object> result = new HashMap<String, Object>();
 		Map<String, Object> resultData = new HashMap<String, Object>();
-
+		
 		// parameter Setting
 		paramMap.put("commentSeq", commentSeq);
 		// parameter Setting
 		try {
-			if(jsonString ==  null || "".equals(jsonString)) {
-				jsonString = "{}";
-			}
-			Map<String, String> jsonMap = mapper.readValue(jsonString, Map.class);
-
-			String writeUserId = jsonMap.get("writeUserId");
 			
 			paramMap.put("commentSeq", commentSeq);
-			paramMap.put("writeUserId", writeUserId);
 		} catch (Exception e) {
 			result.put("result", "ERROR");
 			result.put("errMsg", "코멘트 삭제에 실패하였습니다.");
@@ -235,7 +248,7 @@ public class CommentController {
 		}
 
 		try {
-			
+			System.out.println(paramMap);
 			int deleteCount = commentService.deleteComment(paramMap);
 			if(deleteCount == 0) {
 				throw new Exception("코멘트 삭제에 실패하였습니다.");

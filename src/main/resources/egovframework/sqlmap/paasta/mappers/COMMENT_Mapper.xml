@@ -55,7 +55,6 @@
 	<delete id="deleteComment" parameterType="hashMap">
 		DELETE FROM TB_COMMENT
 		WHERE comment_seq = #{commentSeq}
-		AND write_user_id = #{writeUserId}
 	</delete>
 
 </mapper>
