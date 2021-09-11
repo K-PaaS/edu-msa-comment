@@ -37,7 +37,6 @@ public class CommentController {
 		Map<String, Object> commentCount = null;
 		List<Object> commentList = null;
 
-		System.out.println("boardSeq : " + boardSeq);
 		// parameter Setting
 		try {
 			paramMap.put("boardSeq", boardSeq);
@@ -151,7 +150,6 @@ public class CommentController {
 	@RequestMapping(value = "/comments/{commentSeq}", method = RequestMethod.PUT)
 	public Map<String, Object> putComment(@PathVariable("commentSeq") int commentSeq, HttpEntity<String> httpEntity) {
 		
-		System.out.println("AAAA : " + commentSeq);
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString = httpEntity.getBody();
 
@@ -190,9 +188,7 @@ public class CommentController {
 		}
 		
 		try {
-			System.out.println(paramMap);
 			int updateCount = commentService.putComment(paramMap);
-			System.out.println(updateCount);
 			if(updateCount != 1) {
 				throw new Exception("코멘트 수정에 실패하였습니다.");
 			}
@@ -248,7 +244,6 @@ public class CommentController {
 		}
 
 		try {
-			System.out.println(paramMap);
 			int deleteCount = commentService.deleteComment(paramMap);
 			if(deleteCount == 0) {
 				throw new Exception("코멘트 삭제에 실패하였습니다.");
